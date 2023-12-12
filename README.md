@@ -27,4 +27,3 @@ LEVELS:
 - Level 2 has 8 enemies and the movement speed of enemies and spaceship are increased.
 
 - Level 3 has 10 enemies speeds are increased for enemies, spaceship and bullets.
-
