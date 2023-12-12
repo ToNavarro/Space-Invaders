@@ -2,6 +2,7 @@ import pygame
 import random
 import math
 from pygame import mixer
+from space_objects import SpaceObjects
 
 pygame.init()
 
@@ -20,35 +21,22 @@ mixer.music.load("sounds/background.wav")
 mixer.music.play(-1)
 
 # PLAYER
-player_img = pygame.image.load("images/player.png")  # Icon by FLATICON (https://www.flaticon.com/)
-player_x = 370
-player_y = 480
-player_x_movement = 0
+# Icon by FLATICON (https://www.flaticon.com/)
+player = SpaceObjects("images/player.png", screen, 370, 480)
 
 # ENEMIES
-ENEMY_IMG = pygame.image.load("images/enemy3.png")  # Enemy Icon by Icons8 (https://icons8.com)
-enemy_x = []
-enemy_y = []
-enemy_x_movement = []
-ENEMY_Y_MOVEMENT = 40
+# Enemy Icon by Icons8 (https://icons8.com)
 num_of_enemies = 6
-
-for i in range(num_of_enemies):
-    enemy_x.append(random.randint(0, 736))
-    enemy_y.append(random.randint(50, 150))
-    enemy_x_movement.append(random.choice([1.5, -1.5]))
-
+enemies = [SpaceObjects("images/enemy3.png", screen, random.randint(0, 736), random.randint(50, 150),
+                        x_movement=random.choice([1.5, -1.5]), y_movement=40) for enemy in range(num_of_enemies)]
 
 # BULLET
-bullet_img = pygame.image.load("images/bullet.png")  # Icon by FLATICON (https://www.flaticon.com/)
-bullet_sound = mixer.Sound("sounds/laser.wav")
-collision_sound = mixer.Sound("sounds/explosion.wav")
-bullet_x = 0
-bullet_y = 480
-bullet_x_movement = 0
-bullet_y_movement = 10
-# states = ["ready", "fired"]
-bullet_state = "ready"
+# Icon by FLATICON (https://www.flaticon.com/)
+bullet = SpaceObjects("images/bullet.png", screen, 0, 480, y_movement=10)
+bullet.state = "ready"
+bullet.sound = mixer.Sound("sounds/laser.wav")
+bullet.collision_sound = mixer.Sound("sounds/explosion.wav")
+
 
 # SCORE
 score_value = 0
@@ -69,18 +57,9 @@ def game_over_text():
     screen.blit(over_text, (200, 250))
 
 
-def player(x, y):
-    screen.blit(player_img, (x, y))
-
-
-def enemy(x, y):
-    screen.blit(ENEMY_IMG, (x, y))
-
-
 def fire_bullet(x, y):
-    global bullet_state
-    bullet_state = "fired"
-    screen.blit(bullet_img, (x + 16, y + 10))
+    bullet.state = "fired"
+    screen.blit(bullet.img, (x + 16, y + 10))
 
 
 def is_collision(enemy_x, enemy_y, bullet_x, bullet_y):
@@ -98,49 +77,45 @@ while run:
     screen.blit(background, (-100, 0))
 
     # Player movement
-    if player_x <= 0:
-        player_x = 0
-    if player_x >= 736:
-        player_x = 736
-    player(player_x, player_y)
+    if player.x <= 0:
+        player.x = 0
+    if player.x >= 736:
+        player.x = 736
+    player.draw()
 
     # Enemy movement
-    for i in range(num_of_enemies):
+    for enemy in enemies:
         # Game Over
-        if enemy_y[i] > 440:
-            for j in range(num_of_enemies):
-                enemy_y[j] = 2000
+        if enemy.y > 440:
+            for enemy in enemies:
+                enemy.y = 2000
             game_over_text()
             break
 
-        if enemy_x[i] <= 0 or enemy_x[i] >= 736:
-            enemy_x_movement[i] *= -1
-            enemy_y[i] += ENEMY_Y_MOVEMENT
-        enemy(enemy_x[i], enemy_y[i])
+        if enemy.x <= 0 or enemy.x >= 736:
+            enemy.x_movement *= -1
+            enemy.y += enemy.y_movement
+        enemy.draw()
 
-    # if enemy_x <= 0 or enemy_x >= 736:
-    #     enemy_x_movement *= -1
-    #     enemy_y += enemy_y_movement
-    # enemy(enemy_x, enemy_y)
         # Collision
-        collision = is_collision(enemy_x[i], enemy_y[i], bullet_x, bullet_y)
+        collision = is_collision(enemy.x, enemy.y, bullet.x, bullet.y)
         if collision:
-            collision_sound.play()
-            bullet_y = 480
-            bullet_state = "ready"
+            bullet.collision_sound.play()
+            bullet.y = 480
+            bullet.state = "ready"
             score_value += 1
 
-            enemy_x[i] = random.randint(0, 736)
-            enemy_y[i] = random.randint(50, 150)
+            enemy.x = random.randint(0, 736)
+            enemy.y = random.randint(50, 150)
 
     # Bullet Movement
-    if bullet_y <= 0:
-        bullet_y = 480
-        bullet_state = "ready"
+    if bullet.y <= 0:
+        bullet.y = 480
+        bullet.state = "ready"
 
-    if bullet_state == "fired":
-        fire_bullet(bullet_x, bullet_y)
-        bullet_y -= bullet_y_movement
+    if bullet.state == "fired":
+        fire_bullet(bullet.x, bullet.y)
+        bullet.y -= bullet.y_movement
 
     # key = pygame.key.get_pressed()
     #
@@ -158,20 +133,20 @@ while run:
             run = False
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                player_x_movement = -2
+                player.x_movement = -2
             if event.key == pygame.K_RIGHT:
-                player_x_movement = 2
-            if event.key == pygame.K_SPACE and bullet_state == "ready":
-                bullet_sound.play()
-                bullet_x = player_x
-                fire_bullet(bullet_x, bullet_y)
+                player.x_movement = 2
+            if event.key == pygame.K_SPACE and bullet.state == "ready":
+                bullet.sound.play()
+                bullet.x = player.x
+                fire_bullet(bullet.x, bullet.y)
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                player_x_movement = 0
+                player.x_movement = 0
 
-    player_x += player_x_movement
-    for i in range(num_of_enemies):
-        enemy_x[i] += enemy_x_movement[i]
+    player.x += player.x_movement
+    for enemy in enemies:
+        enemy.x += enemy.x_movement
     show_score(text_x, text_y)
 
     pygame.display.update()
